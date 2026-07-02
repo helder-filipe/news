@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hub de Notícias & Newsletter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-sky-600 flex items-center gap-2">
+                <span>📰</span> InfoHub <span class="text-xs bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-normal">Curator</span>
+            </h1>
+            <nav class="flex gap-2 bg-slate-100 p-1 rounded-lg">
+                <button id="btn-descobrir" class="px-4 py-2 text-sm font-medium rounded-md bg-white text-slate-900 shadow-sm transition-all">
+                    Descobrir
+                </button>
+                <button id="btn-arquivo" class="px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:text-slate-900 transition-all">
+                    O Meu Arquivo
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-8">
+        
+        <section id="seccao-descobrir" class="space-y-6">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div class="w-full md:w-1/3">
+                <input type="text" id="input-pesquisa" value="" placeholder="Pesquisar tema (ex: futebol, governo, europa)..." 
+                    class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm">
+            </div>
+            <!-- Categorias gerais e abrangentes atualizadas -->
+            <div class="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
+                <button class="filter-tag bg-sky-50 text-sky-700 px-3 py-1 rounded-full text-xs font-semibold border border-sky-200">Geral</button>
+                <button class="filter-tag bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-semibold hover:bg-slate-200">Mundo</button>
+                <button class="filter-tag bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-semibold hover:bg-slate-200">Economia</button>
+                <button class="filter-tag bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-semibold hover:bg-slate-200">Desporto</button>
+                <button class="filter-tag bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-semibold hover:bg-slate-200">Politica</button>
+                <button class="filter-tag bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-semibold hover:bg-slate-200">Cultura</button>
+            </div>
+            <button id="btn-buscar-noticias" class="w-full md:w-auto bg-sky-600 hover:bg-sky-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
+                Buscar Notícias
+            </button>
+        </div>
+
+            <div id="grid-noticias" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="text-center col-span-full py-12 text-slate-400">
+                    Clica em "Buscar Notícias" para carregar o feed...
+                </div>
+            </div>
+        </section>
+
+        <section id="seccao-arquivo" class="space-y-6 hidden">
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900">Artigos Guardados no Google Sheets</h2>
+                    <p class="text-xs text-slate-500">Gere uma newsletter HTML com os artigos pendentes de envio.</p>
+                </div>
+                <button id="btn-disparar-newsletter" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                    <span>🚀</span> Enviar Newsletter por Email
+                </button>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
+                            <th class="p-4">Título</th>
+                            <th class="p-4">Categoria</th>
+                            <th class="p-4">Nota Pessoal</th>
+                            <th class="p-4">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-arquivo-corpo" class="text-sm divide-y divide-slate-100">
+                        <tr>
+                            <td colspan="4" class="p-4 text-center text-slate-400">Nenhum artigo carregado.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // CONFIGURAÇÃO: Cola aqui o URL que obtiveste ao implementar o teu Apps Script
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwclWG6OHKh7yUE6Utq1aZkhr9M-WlAjXby3KdQ9hvLEk8ouGXGjzqzByldrcr8FGHt/exec";
+        
+        // Exemplo de API gratuita de notícias (podes trocar por outra ou usar uma chave da NewsAPI)
+        // Para testar sem chave de API, vamos usar um feed público alternativo ou mock de dados estruturado
+        //const NEWS_API_KEY = "6a8e270841244ed9a8d5a7ae84c49d06";
+
+        // Elementos do DOM
+        const btnDescobrir = document.getElementById('btn-descobrir');
+        const btnArquivo = document.getElementById('btn-arquivo');
+        const seccaoDescobrir = document.getElementById('seccao-descobrir');
+        const seccaoArquivo = document.getElementById('seccao-arquivo');
+        const gridNoticias = document.getElementById('grid-noticias');
+        const tabelaArquivoCorpo = document.getElementById('tabela-arquivo-corpo');
+        const btnBuscarNoticias = document.getElementById('btn-buscar-noticias');
+        const inputPesquisa = document.getElementById('input-pesquisa');
+        const btnDispararNewsletter = document.getElementById('btn-disparar-newsletter');
+
+        // Alternar entre Abas (Tabs)
+        btnDescobrir.addEventListener('click', () => {
+            alternarAbas(btnDescobrir, btnArquivo, seccaoDescobrir, seccaoArquivo);
+        });
+
+        btnArquivo.addEventListener('click', () => {
+            alternarAbas(btnArquivo, btnDescobrir, seccaoArquivo, seccaoDescobrir);
+            carregarArquivoDoSheets();
+        });
+
+        function alternarAbas(btnAtivo, btnInativo, seccaoAtiva, seccaoInativa) {
+            btnAtivo.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
+            btnAtivo.classList.remove('text-slate-600');
+            btnInativo.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
+            btnInativo.classList.add('text-slate-600');
+            seccaoAtiva.classList.remove('hidden');
+            seccaoInativa.classList.add('hidden');
+        }
+
+        // --- MÓDULO 1: BUSCAR NOTÍCIAS EXTERNAS ---
+        btnBuscarNoticias.addEventListener('click', buscarNoticiasExteriores);
+
+       function buscarNoticiasExteriores() {
+            const termo = inputPesquisa.value ? inputPesquisa.value.trim().toLowerCase() : "";
+            gridNoticias.innerHTML = `<div class="text-center col-span-full py-12 text-slate-500">A ligar de forma segura ao servidor Google para carregar a RTP...</div>`;
+
+            // Chamamos o teu próprio Apps Script injetando a flag 'noticias' e o termo pesquisado
+            const url = `${APPS_SCRIPT_URL}?acao=noticias&termo=${encodeURIComponent(termo)}&_=${new Date().getTime()}`;
+
+            fetch(url)
+            .then(response => {
+                if (!response.ok) throw new Error('Erro na resposta do servidor');
+                return response.json();
+            })
+            .then(artigos => {
+                if (artigos && artigos.length > 0) {
+                    // Renderiza todas as notícias reais enviadas pelo teu script
+                    renderizarCartoes(artigos);
+                } else {
+                    gridNoticias.innerHTML = `<div class="text-center col-span-full py-12 text-slate-400">Nenhuma notícia encontrada de momento para o termo "${inputPesquisa.value}". Tenta limpar a caixa de pesquisa para ver todas.</div>`;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                gridNoticias.innerHTML = `<div class="text-center col-span-full py-12 text-red-500">Erro de comunicação com o Apps Script. Confirma se salvaste como "Nova Versão" no painel do Google.</div>`;
+            });
+        }
+
+        // --- RENDERIZAR TODOS OS CARTÕES ENCONTRADOS ---
+        function renderizarCartoes(artigos) {
+            gridNoticias.innerHTML = "";
+            artigos.forEach((artigo, index) => {
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between p-5 space-y-4";
+                
+                // Criar o bloco da imagem apenas se o feed da RTP tiver enviado uma imagem válida
+                const imagemHTML = artigo.image 
+                    ? `<div class="w-full h-40 overflow-hidden rounded-lg mb-2">
+                        <img src="${artigo.image}" alt="Notícia" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300">
+                    </div>` 
+                    : '';
+
+                card.innerHTML = `
+                    <div class="space-y-2">
+                        ${imagemHTML}
+                        <div class="pt-1">
+                            <span class="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">${artigo.categoria}</span>
+                        </div>
+                        <h3 class="font-bold text-base text-slate-900 leading-snug hover:text-sky-600 transition-colors">
+                            <a href="${artigo.url}" target="_blank">${artigo.title}</a>
+                        </h3>
+                        <p class="text-xs text-slate-500">${artigo.description}</p>
+                        <p class="text-[11px] text-slate-400 font-medium">Fonte: <em>${artigo.source.name}</em></p>
+                    </div>
+                    <div class="space-y-2 pt-2 border-t border-slate-100">
+                        <input type="text" id="nota-${index}" placeholder="Adicionar nota pessoal para a newsletter (opcional)..." 
+                            class="w-full px-3 py-1.5 rounded border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500">
+                        <button onclick="gravarNoSheetsDirecto('${index}', '${artigo.source.name}', '${artigo.url}', '${artigo.categoria}')" 
+                                id="btn-gravar-${index}"
+                                class="w-full bg-slate-900 hover:bg-sky-600 text-white text-xs font-medium py-2 rounded transition-colors flex items-center justify-center gap-1">
+                            📥 Gravar para a Newsletter
+                        </button>
+                    </div>
+                `;
+                gridNoticias.appendChild(card);
+            });
+        }
+
+        // --- ATUALIZAR FUNÇÃO DE GRAVAÇÃO PARA PASSAR A CATEGORIA REAL ---
+        function gravarNoSheetsDirecto(index, fonte, url, categoriaNativa) {
+            const cards = gridNoticias.children;
+            const titulo = cards[index].querySelector('h3 a').innerText;
+            const notaPessoal = document.getElementById(`nota-${index}`).value;
+
+            const botao = document.getElementById(`btn-gravar-${index}`);
+            botao.disabled = true;
+            botao.innerText = "A gravar no Sheets...";
+
+            const dadosArtigo = {
+                titulo: titulo,
+                fonte: fonte,
+                url: url,
+                categoria: categoriaNativa,
+                notaPessoal: notaPessoal
+            };
+
+            const formBody = new URLSearchParams();
+            formBody.append('dados', JSON.stringify(dadosArtigo));
+
+            fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                body: formBody.toString()
+            })
+            .then(() => {
+                alert(`Artigo gravado com sucesso no Sheets com a categoria ${categoriaNativa}!`);
+                document.getElementById(`nota-${index}`).value = "";
+            })
+            .catch(err => console.error(err))
+            .finally(() => {
+                botao.disabled = false;
+                botao.innerText = "📥 Gravar para a Newsletter";
+            });
+        }
+
+    
+
+        // --- MÓDULO 3: CARREGAR DADOS DO SHEETS (GET) ---
+        function carregarArquivoDoSheets() {
+            tabelaArquivoCorpo.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">A carregar do Google Sheets...</td></tr>`;
+            
+            fetch(APPS_SCRIPT_URL)
+            .then(res => res.json())
+            .then(artigos => {
+                tabelaArquivoCorpo.innerHTML = "";
+                if(artigos.length === 0) {
+                    tabelaArquivoCorpo.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">Nenhum artigo encontrado no arquivo.</td></tr>`;
+                    return;
+                }
+                
+                // Popula a tabela reversa (artigos mais recentes primeiro)
+                artigos.reverse().forEach(artigo => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition-colors";
+                    
+                    const badgeEstado = artigo.Enviado_Newsletter === true || artigo.Enviado_Newsletter === "true"
+                        ? `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-semibold px-2 py-0.5 rounded-full">Enviado</span>`
+                        : `<span class="bg-amber-100 text-amber-800 text-[10px] font-semibold px-2 py-0.5 rounded-full">Pendente</span>`;
+
+                    tr.innerHTML = `
+                        <td class="p-4 font-medium text-slate-900">
+                            <a href="${artigo.URL}" target="_blank" class="hover:text-sky-600 transition-colors">${artigo.Titulo}</a>
+                            <p class="text-[11px] text-slate-400">Fonte: ${artigo.Fonte}</p>
+                        </td>
+                        <td class="p-4 text-xs text-slate-500">${artigo.Categoria}</td>
+                        <td class="p-4 text-xs text-slate-600 italic max-w-xs truncate">${artigo.Nota_Pessoal || '-'}</td>
+                        <td class="p-4">${badgeEstado}</td>
+                    `;
+                    tabelaArquivoCorpo.appendChild(tr);
+                });
+            })
+            .catch(err => {
+                console.error(err);
+                tabelaArquivoCorpo.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">Erro ao carregar o arquivo do Sheets. Confirma o URL da app web.</td></tr>`;
+            });
+        }
+
+        // --- MÓDULO 4: DISPARAR ENVIO DA NEWSLETTER ---
+        btnDispararNewsletter.addEventListener('click', () => {
+            if(!confirm("Tens a certeza que queres processar e enviar a newsletter com os artigos pendentes?")) return;
+            
+            btnDispararNewsletter.disabled = true;
+            btnDispararNewsletter.innerText = "A enviar email...";
+            
+            // Para acionar a função de envio via URL, podemos passar um parâmetro na query,
+            // mas como configurámos o Apps Script com a função padrão, vamos chamá-la estendendo o GET ou POST.
+            // Para simplificar, podes adicionar um botão diretamente no painel do Google Sheets ou adaptar o doGet.
+            // Contudo, podes fazer um fetch passando uma flag de ação:
+            
+            fetch(`${APPS_SCRIPT_URL}?acao=enviar`)
+            .then(() => {
+                alert("Pedido de envio processado! Verifica a tua caixa de correio eletrónico.");
+                carregarArquivoDoSheets(); // Recarrega a tabela para atualizar os estados
+            })
+            .catch(err => console.error(err))
+            .finally(() => {
+                btnDispararNewsletter.disabled = false;
+                btnDispararNewsletter.innerText = "🚀 Enviar Newsletter por Email";
+            });
+        });
+
+         // --- LOGICA DOS CLIQUES NAS NOVAS TAGS DE CATEGORIAS (CORRIGIDA) ---
+        document.querySelectorAll('.filter-tag').forEach(tag => {
+            tag.addEventListener('click', (e) => {
+                // Estilo dos botões ativos/inativos
+                document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('bg-sky-50', 'text-sky-700', 'border', 'border-sky-200'));
+                document.querySelectorAll('.filter-tag').forEach(t => t.classList.add('bg-slate-100', 'text-slate-600'));
+                
+                e.target.classList.remove('bg-slate-100', 'text-slate-600');
+                e.target.classList.add('bg-sky-50', 'text-sky-700', 'border', 'border-sky-200');
+                
+                // Define o valor no campo de texto e executa a busca real imediatamente
+                const valorTag = e.target.innerText.toLowerCase();
+                if(valorTag === "geral") {
+                    inputPesquisa.value = ""; // Deixa vazio para carregar tudo de uma vez
+                } else {
+                    inputPesquisa.value = e.target.innerText; // Coloca a categoria na caixa de texto
+                }
+                buscarNoticiasExteriores();
+            });
+        });
+    </script>
+</body>
+</html>
