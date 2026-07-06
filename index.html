@@ -88,7 +88,7 @@
 
     <script>
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwclWG6OHKh7yUE6Utq1aZkhr9M-WlAjXby3KdQ9hvLEk8ouGXGjzqzByldrcr8FGHt/exec";
-        
+
         // Elementos do DOM
         const btnDescobrir = document.getElementById('btn-descobrir');
         const btnArquivo = document.getElementById('btn-arquivo');
@@ -99,6 +99,31 @@
         const btnBuscarNoticias = document.getElementById('btn-buscar-noticias');
         const inputPesquisa = document.getElementById('input-pesquisa');
         const btnDispararNewsletter = document.getElementById('btn-disparar-newsletter');
+
+        // Variáveis de controlo do motor dinâmico
+        const TOTAL_FONTES = 11;
+        let categoriaAtual = "geral";
+        let cronometroAtualizacao = null;
+
+        // --- INICIALIZAÇÃO AUTOMÁTICA DA APLICAÇÃO ---
+        document.addEventListener("DOMContentLoaded", () => {
+            // 1. Carrega imediatamente o que estiver guardado na memória para a página nunca abrir em branco
+            carregarFeedDaMemoriaLocal();
+            
+            // 2. Dispara uma atualização silenciosa de última hora assim que abre
+            executarSincronizacaoEmParalelo();
+            
+            // 3. Ativa o relógio automático para atualizar sozinho de 5 em 5 minutos (300.000 milissegundos)
+            ativarTemporizadorCincoMinutos();
+        });
+
+        function ativarTemporizadorCincoMinutos() {
+            if (cronometroAtualizacao) clearInterval(cronometroAtualizacao);
+            cronometroAtualizacao = setInterval(() => {
+                console.log("⏰ 5 Minutos passados! A atualizar o feed em segundo plano...");
+                executarSincronizacaoEmParalelo(true); // true ativa o modo silencioso (não apaga o ecrã)
+            }, 300000); 
+        }
 
         // Alternar entre Abas (Tabs)
         btnDescobrir.addEventListener('click', () => {
@@ -119,87 +144,89 @@
             seccaoInativa.classList.add('hidden');
         }
 
-        // --- MÓDULO 1: BUSCAR NOTÍCIAS EXTERNAS (CARTÕES) ---
-        btnBuscarNoticias.addEventListener('click', buscarNoticiasExteriores);
+        // Clique no botão manual de busca
+        btnBuscarNoticias.addEventListener('click', () => {
+            categoriaAtual = inputPesquisa.value ? inputPesquisa.value.trim().toLowerCase() : "geral";
+            executarSincronizacaoEmParalelo(false);
+            ativarTemporizadorCincoMinutos(); // Reinicia o relógio dos 5 min
+        });
 
-        // --- NOVO MOTOR DE BUSCA EM PARALELO INCREMENTAL ---
-        function buscarNoticiasExteriores() {
+        // --- MOTOR DE SINCRONIZAÇÃO PARALELO E INCREMENTAL ---
+        function executarSincronizacaoEmParalelo(ehSilencioso = false) {
             const termo = inputPesquisa.value ? inputPesquisa.value.trim().toLowerCase() : "";
             
-            // Limpamos o ecrã e deixamos um aviso dinâmico inicial
-            gridNoticias.innerHTML = `
-                <div id="status-carregamento" class="text-center col-span-full py-6 text-slate-500 font-medium animate-pulse">
-                    🔄 A sintonizar as 11 redações de imprensa em tempo real...
-                </div>
-            `;
+            // Se não for silencioso (ex: clique manual), mostra o aviso de carregamento
+            if (!ehSilencioso) {
+                gridNoticias.innerHTML = `
+                    <div id="status-carregamento" class="text-center col-span-full py-6 text-slate-500 font-medium animate-pulse">
+                        🔄 A sintonizar as 11 redações de imprensa em tempo real...
+                    </div>
+                `;
+            }
 
-            // Temos exatamente 11 fontes configuradas no teu Apps Script (índices de 0 a 10)
-            const totalFontes = 11; 
             let fontesRespondidas = 0;
-            let totalNoticiasExibidas = 0;
+            let novasNoticiasColetadas = [];
 
-            // Dispara 11 pedidos assíncronos ao mesmo tempo!
-            for (let i = 0; i < totalFontes; i++) {
+            for (let i = 0; i < TOTAL_FONTES; i++) {
                 const urlIndividual = `${APPS_SCRIPT_URL}?acao=noticias&fonteIndex=${i}&termo=${encodeURIComponent(termo)}&_=${new Date().getTime()}`;
 
                 fetch(urlIndividual)
-                .then(response => {
-                    if (!response.ok) throw new Error('Erro na fonte');
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(artigosDaFonte => {
                     fontesRespondidas++;
                     
                     if (artigosDaFonte && artigosDaFonte.length > 0) {
-                        // Se for a primeira fonte a responder, limpamos a mensagem de carregamento inicial
-                        if (totalNoticiasExibidas === 0) {
-                            const statusDiv = document.getElementById('status-carregamento');
-                            if (statusDiv) statusDiv.remove();
-                        }
+                        // Juntamos todas as respostas neste lote atual
+                        novasNoticiasColetadas = novasNoticiasColetadas.concat(artigosDaFonte);
                         
-                        // Injeta as notícias desta fonte imediatamente na página sem apagar o que já lá está!
-                        adicionarCartoesIncrimentais(artigosDaFonte);
-                        totalNoticiasExibidas += artigosDaFonte.length;
+                        // Ordenamos imediatamente por data (mais recente primeiro)
+                        novasNoticiasColetadas.sort((a, b) => b.dataPublicacao - a.dataPublicacao);
+
+                        // Limpamos o aviso de carregamento no primeiro sinal de dados
+                        const statusDiv = document.getElementById('status-carregamento');
+                        if (statusDiv && !ehSilencioso) statusDiv.remove();
+
+                        // Desenha as notícias progressivamente no ecrã
+                        atualizarEcraEfetivo(novasNoticiasColetadas);
+                        
+                        // Guardamos na memória local do browser associada a este tema/categoria
+                        localStorage.setItem(`cache_news_${categoriaAtual}`, JSON.stringify(novasNoticiasColetadas));
                     }
 
-                    // Quando as 11 fontes terminarem de responder
-                    if (fontesRespondidas === totalFontes && totalNoticiasExibidas === 0) {
-                        gridNoticias.innerHTML = `<div class="text-center col-span-full py-12 text-slate-400">Nenhuma notícia encontrada nos 11 jornais para o termo "${inputPesquisa.value}". Tenta limpar a busca.</div>`;
+                    if (fontesRespondidas === TOTAL_FONTES && novasNoticiasColetadas.length === 0 && !ehSilencioso) {
+                        gridNoticias.innerHTML = `<div class="text-center col-span-full py-12 text-slate-400">Nenhuma notícia encontrada de momento. Tenta outro termo.</div>`;
                     }
                 })
                 .catch(err => {
                     fontesRespondidas++;
-                    console.warn(`A fonte número ${i} falhou ou está protegida.`);
-                    
-                    // Tratamento caso todas as fontes falhem ou terminem
-                    if (fontesRespondidas === totalFontes && totalNoticiasExibidas === 0) {
-                        gridNoticias.innerHTML = `<div class="text-center col-span-full py-12 text-red-500">Erro ao estabelecer ligação com as fontes de imprensa. Tenta novamente.</div>`;
+                    if (fontesRespondidas === TOTAL_FONTES && novasNoticiasColetadas.length === 0 && !ehSilencioso) {
+                        gridNoticias.innerHTML = `<div class="text-center col-span-full py-12 text-red-500">Erro de ligação ao servidor. A mostrar dados offline.</div>`;
+                        carregarFeedDaMemoriaLocal();
                     }
                 });
             }
         }
 
-        // --- RENDERIZADOR INCREMENTAL (INJETA CARTÕES À MEDIDA QUE CHEGAM) ---
-        function adicionarCartoesIncrimentais(artigos) {
-            // Descobrimos quantas notícias já existem no ecrã para gerar índices globais únicos
-            const totalExistentes = gridNoticias.getElementsByClassName('card-noticia').length;
-
-            artigos.forEach((artigo, localIndex) => {
-                const globalIndex = totalExistentes + localIndex;
-                
+        // Limpa e redesenha a grelha de notícias com base no lote consolidado até ao momento
+        function atualizarEcraEfetivo(artigos) {
+            // Limitamos a exibição às 36 notícias mais frescas para manter a fluidez visual
+            const artigosParaExibir = artigos.slice(0, 36);
+            gridNoticias.innerHTML = "";
+            
+            artigosParaExibir.forEach((artigo, index) => {
                 const card = document.createElement('div');
-                card.className = "card-noticia bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between p-5 space-y-4 opacity-0 scale-95 transition-all duration-500";
+                card.className = "card-noticia bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between p-5 space-y-4 transition-all duration-300 hover:shadow-md";
                 
                 const imagemHTML = artigo.image 
                     ? `<div class="w-full h-40 overflow-hidden rounded-lg mb-2">
-                        <img src="${artigo.image}" alt="Notícia" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300">
+                        <img src="${artigo.image}" alt="Notícia" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" onerror="this.parentElement.remove()">
                     </div>` 
                     : '';
 
                 card.innerHTML = `
                     <div class="space-y-2">
                         ${imagemHTML}
-                        <div class="pt-1">
+                        <div class="pt-1 flex justify-between items-center">
                             <span class="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">${artigo.categoria}</span>
                         </div>
                         <h3 class="font-bold text-base text-slate-900 leading-snug hover:text-sky-600 transition-colors">
@@ -209,33 +236,37 @@
                         <p class="text-[11px] text-slate-400 font-medium">Fonte: <em>${artigo.source.name}</em></p>
                     </div>
                     <div class="space-y-2 pt-2 border-t border-slate-100">
-                        <input type="text" id="nota-${globalIndex}" placeholder="Adicionar nota pessoal para a newsletter (opcional)..." 
+                        <input type="text" id="nota-${index}" placeholder="Adicionar nota pessoal para a newsletter (opcional)..." 
                             class="w-full px-3 py-1.5 rounded border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500">
-                        <button onclick="gravarNoSheetsDirectoComIndice('${globalIndex}', '${artigo.source.name}', '${artigo.url}', '${artigo.categoria}')" 
-                                id="btn-gravar-${globalIndex}"
+                        <button onclick="gravarNoSheetsDirectoComIndice('${index}', '${artigo.source.name}', '${artigo.url}', '${artigo.categoria}')" 
+                                id="btn-gravar-${index}"
                                 class="w-full bg-slate-900 hover:bg-sky-600 text-white text-xs font-medium py-2 rounded transition-colors flex items-center justify-center gap-1">
                             📥 Gravar para a Newsletter
                         </button>
                     </div>
                 `;
-                
                 gridNoticias.appendChild(card);
-                
-                // Pequeno truque de animação: faz o cartão surgir com um efeito suave de "Fade-In"
-                setTimeout(() => {
-                    card.classList.remove('opacity-0', 'scale-95');
-                    card.classList.add('opacity-100', 'scale-100');
-                }, 50);
             });
         }
 
-        // --- ADAPTAÇÃO DA GRAVAÇÃO PARA UTILIZAR O ÍNDICE GLOBAL CORRETO ---
-        function gravarNoSheetsDirectoComIndice(globalIndex, fonte, url, categoriaNativa) {
-            const cards = gridNoticias.getElementsByClassName('card-noticia');
-            const titulo = cards[globalIndex].querySelector('h3 a').innerText;
-            const notaPessoal = document.getElementById(`nota-${globalIndex}`).value;
+        // Carrega os dados da memória instantaneamente (Evita ecrãs brancos)
+        function carregarFeedDaMemoriaLocal() {
+            const dadosGuardados = localStorage.getItem(`cache_news_${categoriaAtual}`);
+            if (dadosGuardados) {
+                const artigosGrave = JSON.parse(dadosGuardados);
+                if (artigosGrave.length > 0) {
+                    atualizarEcraEfetivo(artigosGrave);
+                }
+            }
+        }
 
-            const botao = document.getElementById(`btn-gravar-${globalIndex}`);
+        // --- CONFIGURAÇÃO DA GRAVAÇÃO ---
+        function gravarNoSheetsDirectoComIndice(index, fonte, url, categoriaNativa) {
+            const cards = gridNoticias.getElementsByClassName('card-noticia');
+            const titulo = cards[index].querySelector('h3 a').innerText;
+            const notaPessoal = document.getElementById(`nota-${index}`).value;
+
+            const botao = document.getElementById(`btn-gravar-${index}`);
             botao.disabled = true;
             botao.innerText = "A gravar...";
 
@@ -257,42 +288,6 @@
             })
             .then(() => {
                 alert(`Artigo de [${fonte}] gravado com sucesso!`);
-                document.getElementById(`nota-${globalIndex}`).value = "";
-            })
-            .catch(err => console.error(err))
-            .finally(() => {
-                botao.disabled = false;
-                botao.innerText = "📥 Gravar para a Newsletter";
-            });
-        }
-
-        function gravarNoSheetsDirecto(index, fonte, url, categoriaNativa) {
-            const cards = gridNoticias.children;
-            const titulo = cards[index].querySelector('h3 a').innerText;
-            const notaPessoal = document.getElementById(`nota-${index}`).value;
-
-            const botao = document.getElementById(`btn-gravar-${index}`);
-            botao.disabled = true;
-            botao.innerText = "A gravar no Sheets...";
-
-            const dadosArtigo = {
-                titulo: titulo,
-                fonte: fonte,
-                url: url,
-                categoria: categoriaNativa,
-                notaPessoal: notaPessoal
-            };
-
-            const formBody = new URLSearchParams();
-            formBody.append('dados', JSON.stringify(dadosArtigo));
-
-            fetch(APPS_SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-                body: formBody.toString()
-            })
-            .then(() => {
-                alert(`Artigo gravado com sucesso no Sheets!`);
                 document.getElementById(`nota-${index}`).value = "";
             })
             .catch(err => console.error(err))
@@ -371,7 +366,7 @@
             .then(resultado => {
                 if (resultado.status === "sucesso") {
                     alert("Artigo excluído com sucesso!");
-                    carregarArquivoDoSheets(); // Atualiza a tabela dinamicamente
+                    carregarArquivoDoSheets();
                 } else {
                     alert("Erro: " + resultado.mensagem);
                     botao.disabled = false;
@@ -396,7 +391,7 @@
             fetch(`${APPS_SCRIPT_URL}?acao=enviar`)
             .then(() => {
                 alert("Newsletter enviada com sucesso! Confirma a tua caixa de correio.");
-                carregarArquivoDoSheets(); // Recarrega para ver o estado mudar para "Enviado"
+                carregarArquivoDoSheets();
             })
             .catch(err => console.error(err))
             .finally(() => {
@@ -415,12 +410,19 @@
                 e.target.classList.add('bg-sky-50', 'text-sky-700', 'border', 'border-sky-200');
                 
                 const valorTag = e.target.innerText.toLowerCase();
+                categoriaAtual = valorTag;
+                
                 if(valorTag === "geral") {
                     inputPesquisa.value = "";
                 } else {
                     inputPesquisa.value = e.target.innerText;
                 }
-                buscarNoticiasExteriores();
+                
+                // 1. Mostra imediatamente o que está em memória para este filtro
+                carregarFeedDaMemoriaLocal();
+                // 2. Dispara a busca em background para atualizar
+                executarSincronizacaoEmParalelo(false);
+                ativarTemporizadorCincoMinutos();
             });
         });
     </script>
