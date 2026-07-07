@@ -29,19 +29,25 @@
         <!-- 1. SECÇÃO DESCOBRIR (FEED DE NOTÍCIAS) -->
         <section id="seccao-descobrir" class="space-y-6">
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
-                <div class="w-full md:w-1/3">
+                <!-- Caixa de texto de busca encurtada em ecrãs grandes (max-w-xs) para libertar espaço -->
+                <div class="w-full md:w-auto md:max-w-xs flex-1">
                     <input type="text" id="input-pesquisa" value="" placeholder="Pesquisar tema (ex: futebol, governo, europa)..." 
-                        class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 text-sm">
+                        class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 text-xs">
                 </div>
-                <div class="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
-                    <button class="filter-tag bg-sky-50 text-sky-700 px-3 py-1 rounded-full text-xs font-semibold border border-sky-200">Geral</button>
-                    <button class="filter-tag bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-semibold hover:bg-slate-200">Mundo</button>
-                    <button class="filter-tag bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-semibold hover:bg-slate-200">Economia</button>
-                    <button class="filter-tag bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-semibold hover:bg-slate-200">Desporto</button>
-                    <button class="filter-tag bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-semibold hover:bg-slate-200">Politica</button>
-                    <button class="filter-tag bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-xs font-semibold hover:bg-slate-200">Cultura</button>
+                
+                <!-- Contentor de tags otimizado: adicionado flex-wrap para ecrãs médios e botões mais compactos -->
+                <div class="flex flex-wrap md:flex-nowrap gap-1.5 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 justify-start md:justify-center">
+                    <button class="filter-tag bg-sky-50 text-sky-700 px-2.5 py-1 rounded-full text-[11px] font-semibold border border-sky-200 whitespace-nowrap">Geral</button>
+                    <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Mundo</button>
+                    <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Economia</button>
+                    <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Desporto</button>
+                    <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Politica</button>
+                    <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Cultura</button>
+                    <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Internacional</button>
+                    <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Tecnologia</button>
                 </div>
-                <button id="btn-buscar-noticias" class="w-full md:w-auto bg-sky-600 hover:bg-sky-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
+                
+                <button id="btn-buscar-noticias" class="w-full md:w-auto bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-xs font-medium transition-colors shadow-sm whitespace-nowrap">
                     Buscar Notícias
                 </button>
             </div>
@@ -159,7 +165,7 @@
             if (!ehSilencioso) {
                 gridNoticias.innerHTML = `
                     <div id="status-carregamento" class="text-center col-span-full py-6 text-slate-500 font-medium animate-pulse">
-                        🔄 A sintonizar as 10 redações de imprensa em tempo real...
+                        🔄 A sintonizar as 11 redações de imprensa em tempo real...
                     </div>
                 `;
             }
@@ -209,30 +215,49 @@
 
         // Limpa e redesenha a grelha de notícias com base no lote consolidado até ao momento
         function atualizarEcraEfetivo(artigos) {
-            // Limitamos a exibição às 36 notícias mais frescas para manter a fluidez visual
-            const artigosParaExibir = artigos.slice(0, 36);
+            // Expandido o limite de exibição para 80 notícias para mostrar muito mais conteúdo no feed Geral
+            const artigosParaExibir = articlesUnicos(artigos).slice(0, 80);
             gridNoticias.innerHTML = "";
             
             artigosParaExibir.forEach((artigo, index) => {
+                // Higienização visual do CDATA
+                let tituloLimpo = artigo.title ? artigo.title.replace(/<!\[CDATA\[/gi, "").replace(/\]\]>/g, "").trim() : "";
+                let descricaoLimpa = artigo.description ? artigo.description.replace(/<!\[CDATA\[/gi, "").replace(/\]\]>/g, "").trim() : "";
+
+                // --- CORREÇÃO INFALÍVEL ANTI-PIXELIZAÇÃO (CORREIO DA MANHÃ) ---
+                let urlImagem = artigo.image || "";
+                if (urlImagem.includes("cmjornal.pt")) {
+                    // O padrão universal de alta resolução intermédia que funciona em 100% das fotos da CM é 432x244
+                    urlImagem = urlImagem
+                        .replace(/img_\d+x\d+uu/gi, "img_432x244")
+                        .replace(/img_\d+x\d+/gi, "img_432x244");
+                }
+
                 const card = document.createElement('div');
                 card.className = "card-noticia bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between p-5 space-y-4 transition-all duration-300 hover:shadow-md";
                 
-                const imagemHTML = artigo.image 
+                const imagemHTML = urlImagem 
                     ? `<div class="w-full h-40 overflow-hidden rounded-lg mb-2">
-                        <img src="${artigo.image}" alt="Notícia" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" onerror="this.parentElement.remove()">
+                        <img src="${urlImagem}" alt="Notícia" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" onerror="this.parentElement.remove()">
                     </div>` 
                     : '';
+
+                // Ocultar etiqueta "Geral"
+                const categoriaNome = artigo.categoria ? artigo.categoria.toUpperCase() : "GERAL";
+                const etiquetaHTML = categoriaNome === "GERAL" 
+                    ? "" 
+                    : `<span class="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">${artigo.categoria}</span>`;
 
                 card.innerHTML = `
                     <div class="space-y-2">
                         ${imagemHTML}
                         <div class="pt-1 flex justify-between items-center">
-                            <span class="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">${artigo.categoria}</span>
+                            ${etiquetaHTML}
                         </div>
                         <h3 class="font-bold text-base text-slate-900 leading-snug hover:text-sky-600 transition-colors">
-                            <a href="${artigo.url}" target="_blank">${artigo.title}</a>
+                            <a href="${artigo.url}" target="_blank">${tituloLimpo}</a>
                         </h3>
-                        <p class="text-xs text-slate-500">${artigo.description}</p>
+                        <p class="text-xs text-slate-500">${descricaoLimpa}</p>
                         <p class="text-[11px] text-slate-400 font-medium">Fonte: <em>${artigo.source.name}</em></p>
                     </div>
                     <div class="space-y-2 pt-2 border-t border-slate-100">
@@ -246,6 +271,16 @@
                     </div>
                 `;
                 gridNoticias.appendChild(card);
+            });
+        }
+
+        // Função auxiliar para remover notícias duplicadas
+        function articlesUnicos(artigos) {
+            const vistos = new Set();
+            return artigos.filter(artigo => {
+                const duplicado = vistos.has(artigo.url);
+                vistos.add(artigo.url);
+                return !duplicado;
             });
         }
 
