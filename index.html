@@ -6,460 +6,646 @@
     <title>Hub de Notícias & Newsletter</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
+    <body class="bg-slate-50 text-slate-800 min-h-screen">
 
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-xl font-bold text-sky-600 flex items-center gap-2">
-                <span>📰</span> InfoHub <span class="text-xs bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-normal">Curator</span>
-            </h1>
-            <nav class="flex gap-2 bg-slate-100 p-1 rounded-lg">
-                <button id="btn-descobrir" class="px-4 py-2 text-sm font-medium rounded-md bg-white text-slate-900 shadow-sm transition-all">
-                    Descobrir
-                </button>
-                <button id="btn-arquivo" class="px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:text-slate-900 transition-all">
-                    O Meu Arquivo
-                </button>
-            </nav>
-        </div>
-    </header>
-
-    <main class="max-w-6xl mx-auto px-4 py-8">
-        
-        <!-- 1. SECÇÃO DESCOBRIR (FEED DE NOTÍCIAS) -->
-        <section id="seccao-descobrir" class="space-y-6">
-            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
-                <!-- Caixa de texto de busca encurtada em ecrãs grandes (max-w-xs) para libertar espaço -->
-                <div class="w-full md:w-auto md:max-w-xs flex-1">
-                    <input type="text" id="input-pesquisa" value="" placeholder="Pesquisar tema (ex: futebol, governo, europa)..." 
-                        class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 text-xs">
-                </div>
-                
-                <!-- Contentor de tags otimizado: adicionado flex-wrap para ecrãs médios e botões mais compactos -->
-                <div class="flex flex-wrap md:flex-nowrap gap-1.5 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 justify-start md:justify-center">
-                    <button class="filter-tag bg-sky-50 text-sky-700 px-2.5 py-1 rounded-full text-[11px] font-semibold border border-sky-200 whitespace-nowrap">Geral</button>
-                    <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Mundo</button>
-                    <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Economia</button>
-                    <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Desporto</button>
-                    <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Politica</button>
-                    <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Cultura</button>
-                    <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Internacional</button>
-                    <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Tecnologia</button>
-                </div>
-                
-                <button id="btn-buscar-noticias" class="w-full md:w-auto bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-xs font-medium transition-colors shadow-sm whitespace-nowrap">
-                    Buscar Notícias
-                </button>
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+            <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+                <h1 class="text-xl font-bold text-sky-600 flex items-center gap-2">
+                    <span>📰</span> InfoHub <span class="text-xs bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-normal">Curator</span>
+                </h1>
+                <nav class="flex gap-2 bg-slate-100 p-1 rounded-lg">
+                    <button id="btn-descobrir" class="px-4 py-2 text-sm font-medium rounded-md bg-white text-slate-900 shadow-sm transition-all">
+                        Descobrir
+                    </button>
+                    <button id="btn-arquivo" class="px-4 py-2 text-sm font-medium rounded-md text-slate-600 hover:text-slate-900 transition-all">
+                        O Meu Arquivo
+                    </button>
+                </nav>
             </div>
+        </header>
 
-            <!-- Contentor onde entram as notícias em Cartões com Miniatura -->
-            <div id="grid-noticias" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="text-center col-span-full py-12 text-slate-400">Clica em "Buscar Notícias" ou escolhe uma categoria para carregar o feed diário.</div>
-            </div>
-        </section>
-
-        <!-- 2. SECÇÃO DO ARQUIVO (HISTÓRICO DO GOOGLE SHEETS COM ENVIOS) -->
-        <section id="seccao-arquivo" class="space-y-6 hidden">
-            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h2 class="text-lg font-bold text-slate-900">Artigos Guardados no Google Sheets</h2>
-                    <p class="text-xs text-slate-500">Gere uma newsletter HTML com os artigos pendentes de envio.</p>
-                </div>
-                <button id="btn-disparar-newsletter" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
-                    <span>🚀</span> Enviar Newsletter por Email
-                </button>
-            </div>
-
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
-                            <th class="p-4">Título / Link</th>
-                            <th class="p-4">Categoria</th>
-                            <th class="p-4">Nota Pessoal</th>
-                            <th class="p-4">Estado</th>
-                            <th class="p-4 text-center">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabela-arquivo-corpo" class="text-sm divide-y divide-slate-100">
-                        <tr>
-                            <td colspan="5" class="p-4 text-center text-slate-400">Nenhum artigo carregado.</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-    </main>
-
-    <script>
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwclWG6OHKh7yUE6Utq1aZkhr9M-WlAjXby3KdQ9hvLEk8ouGXGjzqzByldrcr8FGHt/exec";
-
-        // Elementos do DOM
-        const btnDescobrir = document.getElementById('btn-descobrir');
-        const btnArquivo = document.getElementById('btn-arquivo');
-        const seccaoDescobrir = document.getElementById('seccao-descobrir');
-        const seccaoArquivo = document.getElementById('seccao-arquivo');
-        const gridNoticias = document.getElementById('grid-noticias');
-        const tabelaArquivoCorpo = document.getElementById('tabela-arquivo-corpo');
-        const btnBuscarNoticias = document.getElementById('btn-buscar-noticias');
-        const inputPesquisa = document.getElementById('input-pesquisa');
-        const btnDispararNewsletter = document.getElementById('btn-disparar-newsletter');
-
-        // Variáveis de controlo do motor dinâmico
-        const TOTAL_FONTES = 11;
-        let categoriaAtual = "geral";
-        let cronometroAtualizacao = null;
-
-        // --- INICIALIZAÇÃO AUTOMÁTICA DA APLICAÇÃO ---
-        document.addEventListener("DOMContentLoaded", () => {
-            // 1. Carrega imediatamente o que estiver guardado na memória para a página nunca abrir em branco
-            carregarFeedDaMemoriaLocal();
+        <main class="max-w-6xl mx-auto px-4 py-8">
             
-            // 2. Dispara uma atualização silenciosa de última hora assim que abre
-            executarSincronizacaoEmParalelo();
-            
-            // 3. Ativa o relógio automático para atualizar sozinho de 5 em 5 minutos (300.000 milissegundos)
-            ativarTemporizadorCincoMinutos();
-        });
-
-        function ativarTemporizadorCincoMinutos() {
-            if (cronometroAtualizacao) clearInterval(cronometroAtualizacao);
-            cronometroAtualizacao = setInterval(() => {
-                console.log("⏰ 5 Minutos passados! A atualizar o feed em segundo plano...");
-                executarSincronizacaoEmParalelo(true); // true ativa o modo silencioso (não apaga o ecrã)
-            }, 300000); 
-        }
-
-        // Alternar entre Abas (Tabs)
-        btnDescobrir.addEventListener('click', () => {
-            alternarAbas(btnDescobrir, btnArquivo, seccaoDescobrir, seccaoArquivo);
-        });
-
-        btnArquivo.addEventListener('click', () => {
-            alternarAbas(btnArquivo, btnDescobrir, seccaoArquivo, seccaoDescobrir);
-            carregarArquivoDoSheets();
-        });
-
-        function alternarAbas(btnAtivo, btnInativo, seccaoAtiva, seccaoInativa) {
-            btnAtivo.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
-            btnAtivo.classList.remove('text-slate-600');
-            btnInativo.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
-            btnInativo.classList.add('text-slate-600');
-            seccaoAtiva.classList.remove('hidden');
-            seccaoInativa.classList.add('hidden');
-        }
-
-        // Clique no botão manual de busca
-        btnBuscarNoticias.addEventListener('click', () => {
-            categoriaAtual = inputPesquisa.value ? inputPesquisa.value.trim().toLowerCase() : "geral";
-            executarSincronizacaoEmParalelo(false);
-            ativarTemporizadorCincoMinutos(); // Reinicia o relógio dos 5 min
-        });
-
-        // --- MOTOR DE SINCRONIZAÇÃO PARALELO E INCREMENTAL ---
-        function executarSincronizacaoEmParalelo(ehSilencioso = false) {
-            const termo = inputPesquisa.value ? inputPesquisa.value.trim().toLowerCase() : "";
-            
-            // Se não for silencioso (ex: clique manual), mostra o aviso de carregamento
-            if (!ehSilencioso) {
-                gridNoticias.innerHTML = `
-                    <div id="status-carregamento" class="text-center col-span-full py-6 text-slate-500 font-medium animate-pulse">
-                        🔄 A sintonizar as 11 redações de imprensa em tempo real...
+            <!-- 1. SECÇÃO DESCOBRIR (FEED DE NOTÍCIAS) -->
+            <section id="seccao-descobrir" class="space-y-6">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+                    <!-- Caixa de texto de busca encurtada em ecrãs grandes (max-w-xs) para libertar espaço -->
+                    <div class="w-full md:w-auto md:max-w-xs flex-1">
+                        <input type="text" id="input-pesquisa" value="" placeholder="Pesquisar tema (ex: futebol, governo, europa)..." 
+                            class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 text-xs">
                     </div>
-                `;
-            }
-
-            let fontesRespondidas = 0;
-            let novasNoticiasColetadas = [];
-
-            for (let i = 0; i < TOTAL_FONTES; i++) {
-                const urlIndividual = `${APPS_SCRIPT_URL}?acao=noticias&fonteIndex=${i}&termo=${encodeURIComponent(termo)}&_=${new Date().getTime()}`;
-
-                fetch(urlIndividual)
-                .then(response => response.json())
-                .then(artigosDaFonte => {
-                    fontesRespondidas++;
                     
-                    if (artigosDaFonte && artigosDaFonte.length > 0) {
-                        // Juntamos todas as respostas neste lote atual
-                        novasNoticiasColetadas = novasNoticiasColetadas.concat(artigosDaFonte);
-                        
-                        // Ordenamos imediatamente por data (mais recente primeiro)
-                        novasNoticiasColetadas.sort((a, b) => b.dataPublicacao - a.dataPublicacao);
+                    <!-- Contentor de tags otimizado: adicionado flex-wrap para ecrãs médios e botões mais compactos -->
+                    <div class="flex flex-wrap md:flex-nowrap gap-1.5 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 justify-start md:justify-center">
+                        <button class="filter-tag bg-sky-50 text-sky-700 px-2.5 py-1 rounded-full text-[11px] font-semibold border border-sky-200 whitespace-nowrap">Geral</button>
+                        <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Mundo</button>
+                        <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Economia</button>
+                        <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Desporto</button>
+                        <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Politica</button>
+                        <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Cultura</button>
+                        <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Internacional</button>
+                        <button class="filter-tag bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-[11px] font-semibold hover:bg-slate-200 whitespace-nowrap">Tecnologia</button>
+                    </div>
+                    
+                    <button id="btn-buscar-noticias" class="w-full md:w-auto bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg text-xs font-medium transition-colors shadow-sm whitespace-nowrap">
+                        Buscar Notícias
+                    </button>
+                </div>
 
-                        // Limpamos o aviso de carregamento no primeiro sinal de dados
-                        const statusDiv = document.getElementById('status-carregamento');
-                        if (statusDiv && !ehSilencioso) statusDiv.remove();
+                <!-- Contentor onde entram as notícias em Cartões com Miniatura -->
+                <div id="grid-noticias" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center col-span-full py-12 text-slate-400">Clica em "Buscar Notícias" ou escolhe uma categoria para carregar o feed diário.</div>
+                </div>
+            </section>
 
-                        // Desenha as notícias progressivamente no ecrã
-                        atualizarEcraEfetivo(novasNoticiasColetadas);
-                        
-                        // Guardamos na memória local do browser associada a este tema/categoria
-                        localStorage.setItem(`cache_news_${categoriaAtual}`, JSON.stringify(novasNoticiasColetadas));
-                    }
+            <!-- 2. SECÇÃO DO ARQUIVO (HISTÓRICO DO GOOGLE SHEETS COM ENVIOS) -->
+            <section id="seccao-arquivo" class="space-y-6 hidden">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">Artigos Guardados no Google Sheets</h2>
+                        <p class="text-xs text-slate-500">Gere uma newsletter HTML com os artigos pendentes de envio.</p>
+                    </div>
+                    <button id="btn-disparar-newsletter" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                        <span>🚀</span> Enviar Newsletter por Email
+                    </button>
+                </div>
 
-                    if (fontesRespondidas === TOTAL_FONTES && novasNoticiasColetadas.length === 0 && !ehSilencioso) {
-                        gridNoticias.innerHTML = `<div class="text-center col-span-full py-12 text-slate-400">Nenhuma notícia encontrada de momento. Tenta outro termo.</div>`;
-                    }
-                })
-                .catch(err => {
-                    fontesRespondidas++;
-                    if (fontesRespondidas === TOTAL_FONTES && novasNoticiasColetadas.length === 0 && !ehSilencioso) {
-                        gridNoticias.innerHTML = `<div class="text-center col-span-full py-12 text-red-500">Erro de ligação ao servidor. A mostrar dados offline.</div>`;
-                        carregarFeedDaMemoriaLocal();
-                    }
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase">
+                                <th class="p-4">Título / Link</th>
+                                <th class="p-4">Categoria</th>
+                                <th class="p-4">Nota Pessoal</th>
+                                <th class="p-4">Estado</th>
+                                <th class="p-4 text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-arquivo-corpo" class="text-sm divide-y divide-slate-100">
+                            <tr>
+                                <td colspan="5" class="p-4 text-center text-slate-400">Nenhum artigo carregado.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+
+            <script>
+                const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwclWG6OHKh7yUE6Utq1aZkhr9M-WlAjXby3KdQ9hvLEk8ouGXGjzqzByldrcr8FGHt/exec";
+
+                // Elementos do DOM
+                const btnDescobrir = document.getElementById('btn-descobrir');
+                const btnArquivo = document.getElementById('btn-arquivo');
+                const seccaoDescobrir = document.getElementById('seccao-descobrir');
+                const seccaoArquivo = document.getElementById('seccao-arquivo');
+                const gridNoticias = document.getElementById('grid-noticias');
+                const tabelaArquivoCorpo = document.getElementById('tabela-arquivo-corpo');
+                const btnBuscarNoticias = document.getElementById('btn-buscar-noticias');
+                const inputPesquisa = document.getElementById('input-pesquisa');
+                const btnDispararNewsletter = document.getElementById('btn-disparar-newsletter');
+
+                // Variáveis de controlo do motor dinâmico
+                const TOTAL_FONTES = 11;
+                let categoriaAtual = "geral";
+                let cronometroAtualizacao = null;
+                
+                // --- CORREÇÃO: VARIÁVEL GLOBAL AGORA DECLARADA ---
+                let listaArtigosGlobal = [];
+
+                // --- INICIALIZAÇÃO AUTOMÁTICA DA APLICAÇÃO ---
+                document.addEventListener("DOMContentLoaded", () => {
+                    // 1. Carrega imediatamente o que estiver guardado na memória para a página nunca abrir em branco
+                    carregarFeedDaMemoriaLocal();
+                    
+                    // 2. Dispara uma atualização silenciosa de última hora assim que abre
+                    executarSincronizacaoEmParalelo();
+                    
+                    // 3. Ativa o relógio automático para atualizar sozinho de 5 em 5 minutos (300.000 milissegundos)
+                    ativarTemporizadorCincoMinutos();
                 });
-            }
-        }
 
-        // Limpa e redesenha a grelha de notícias com base no lote consolidado até ao momento
-        function atualizarEcraEfetivo(artigos) {
-            // Expandido o limite de exibição para 80 notícias para mostrar muito mais conteúdo no feed Geral
-            const artigosParaExibir = articlesUnicos(artigos).slice(0, 80);
-            gridNoticias.innerHTML = "";
-            
-            artigosParaExibir.forEach((artigo, index) => {
-                // Higienização visual do CDATA
-                let tituloLimpo = artigo.title ? artigo.title.replace(/<!\[CDATA\[/gi, "").replace(/\]\]>/g, "").trim() : "";
-                let descricaoLimpa = artigo.description ? artigo.description.replace(/<!\[CDATA\[/gi, "").replace(/\]\]>/g, "").trim() : "";
-
-                // --- CORREÇÃO INFALÍVEL ANTI-PIXELIZAÇÃO (CORREIO DA MANHÃ) ---
-                let urlImagem = artigo.image || "";
-                if (urlImagem.includes("cmjornal.pt")) {
-                    // O padrão universal de alta resolução intermédia que funciona em 100% das fotos da CM é 432x244
-                    urlImagem = urlImagem
-                        .replace(/img_\d+x\d+uu/gi, "img_432x244")
-                        .replace(/img_\d+x\d+/gi, "img_432x244");
+                function activarTemporizadorCincoMinutos() {
+                    if (cronometroAtualizacao) clearInterval(cronometroAtualizacao);
+                    cronometroAtualizacao = setInterval(() => {
+                        console.log("⏰ 5 Minutos passados! A atualizar o feed em segundo plano...");
+                        executarSincronizacaoEmParalelo(true); // true ativa o modo silencioso (não apaga o ecrã)
+                    }, 300000); 
                 }
 
-                const card = document.createElement('div');
-                card.className = "card-noticia bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between p-5 space-y-4 transition-all duration-300 hover:shadow-md";
-                
-                const imagemHTML = urlImagem 
-                    ? `<div class="w-full h-40 overflow-hidden rounded-lg mb-2">
-                        <img src="${urlImagem}" alt="Notícia" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" onerror="this.parentElement.remove()">
-                    </div>` 
-                    : '';
+                // Alternar entre Abas (Tabs)
+                btnDescobrir.addEventListener('click', () => {
+                    alternarAbas(btnDescobrir, btnArquivo, seccaoDescobrir, seccaoArquivo);
+                });
 
-                // Ocultar etiqueta "Geral"
-                const categoriaNome = artigo.categoria ? artigo.categoria.toUpperCase() : "GERAL";
-                const etiquetaHTML = categoriaNome === "GERAL" 
-                    ? "" 
-                    : `<span class="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">${artigo.categoria}</span>`;
-
-                card.innerHTML = `
-                    <div class="space-y-2">
-                        ${imagemHTML}
-                        <div class="pt-1 flex justify-between items-center">
-                            ${etiquetaHTML}
-                        </div>
-                        <h3 class="font-bold text-base text-slate-900 leading-snug hover:text-sky-600 transition-colors">
-                            <a href="${artigo.url}" target="_blank">${tituloLimpo}</a>
-                        </h3>
-                        <p class="text-xs text-slate-500">${descricaoLimpa}</p>
-                        <p class="text-[11px] text-slate-400 font-medium">Fonte: <em>${artigo.source.name}</em></p>
-                    </div>
-                    <div class="space-y-2 pt-2 border-t border-slate-100">
-                        <input type="text" id="nota-${index}" placeholder="Adicionar nota pessoal para a newsletter (opcional)..." 
-                            class="w-full px-3 py-1.5 rounded border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500">
-                        <button onclick="gravarNoSheetsDirectoComIndice('${index}', '${artigo.source.name}', '${artigo.url}', '${artigo.categoria}')" 
-                                id="btn-gravar-${index}"
-                                class="w-full bg-slate-900 hover:bg-sky-600 text-white text-xs font-medium py-2 rounded transition-colors flex items-center justify-center gap-1">
-                            📥 Gravar para a Newsletter
-                        </button>
-                    </div>
-                `;
-                gridNoticias.appendChild(card);
-            });
-        }
-
-        // Função auxiliar para remover notícias duplicadas
-        function articlesUnicos(artigos) {
-            const vistos = new Set();
-            return artigos.filter(artigo => {
-                const duplicado = vistos.has(artigo.url);
-                vistos.add(artigo.url);
-                return !duplicado;
-            });
-        }
-
-        // Carrega os dados da memória instantaneamente (Evita ecrãs brancos)
-        function carregarFeedDaMemoriaLocal() {
-            const dadosGuardados = localStorage.getItem(`cache_news_${categoriaAtual}`);
-            if (dadosGuardados) {
-                const artigosGrave = JSON.parse(dadosGuardados);
-                if (artigosGrave.length > 0) {
-                    atualizarEcraEfetivo(artigosGrave);
-                }
-            }
-        }
-
-        // --- CONFIGURAÇÃO DA GRAVAÇÃO ---
-        function gravarNoSheetsDirectoComIndice(index, fonte, url, categoriaNativa) {
-            const cards = gridNoticias.getElementsByClassName('card-noticia');
-            const titulo = cards[index].querySelector('h3 a').innerText;
-            const notaPessoal = document.getElementById(`nota-${index}`).value;
-
-            const botao = document.getElementById(`btn-gravar-${index}`);
-            botao.disabled = true;
-            botao.innerText = "A gravar...";
-
-            const dadosArtigo = {
-                titulo: titulo,
-                fonte: fonte,
-                url: url,
-                categoria: categoriaNativa,
-                notaPessoal: notaPessoal
-            };
-
-            const formBody = new URLSearchParams();
-            formBody.append('dados', JSON.stringify(dadosArtigo));
-
-            fetch(APPS_SCRIPT_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-                body: formBody.toString()
-            })
-            .then(() => {
-                alert(`Artigo de [${fonte}] gravado com sucesso!`);
-                document.getElementById(`nota-${index}`).value = "";
-            })
-            .catch(err => console.error(err))
-            .finally(() => {
-                botao.disabled = false;
-                botao.innerText = "📥 Gravar para a Newsletter";
-            });
-        }
-
-        // --- MÓDULO 2: CARREGAR BASE DE DADOS (TABELA COM REMOÇÃO) ---
-        function carregarArquivoDoSheets() {
-            tabelaArquivoCorpo.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">A ler as linhas do teu Google Sheets...</td></tr>`;
-            
-            fetch(APPS_SCRIPT_URL)
-            .then(response => response.json())
-            .then(artigos => {
-                if (artigos && artigos.length > 0) {
-                    renderizarLinhasDaTabela(artigos);
-                } else {
-                    tabelaArquivoCorpo.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Ainda não tens nenhum artigo guardado na folha.</td></tr>`;
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                tabelaArquivoCorpo.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Erro ao carregar o arquivo do Sheets.</td></tr>`;
-            });
-        }
-
-        function renderizarLinhasDaTabela(artigos) {
-            tabelaArquivoCorpo.innerHTML = "";
-            
-            artigos.forEach(artigo => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50/80 transition-colors";
-                
-                const statusNewsletter = (artigo.Enviado_Newsletter === true || artigo.Enviado_Newsletter === "TRUE")
-                    ? `<span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Enviado</span>`
-                    : `<span class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Pendente</span>`;
-
-                tr.innerHTML = `
-                    <td class="p-4 max-w-sm">
-                        <div class="font-semibold text-slate-900 leading-tight">
-                            <a href="${artigo.URL}" target="_blank" class="hover:text-sky-600 transition-colors">${artigo.Titulo}</a>
-                        </div>
-                        <div class="text-[11px] text-slate-400 mt-1">Fonte: ${artigo.Fonte}</div>
-                    </td>
-                    <td class="p-4">
-                        <span class="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-1 rounded uppercase">${artigo.Categoria}</span>
-                    </td>
-                    <td class="p-4 text-xs font-serif text-slate-600 italic">
-                        ${artigo.Nota_Pessoal ? artigo.Nota_Pessoal : '<span class="text-slate-300 font-sans">Sem notas</span>'}
-                    </td>
-                    <td class="p-4">${statusNewsletter}</td>
-                    <td class="p-4 text-center">
-                        <button onclick="eliminarDoArquivo('${artigo.ID}', this)" 
-                                class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded-md text-xs font-medium transition-all shadow-sm border border-red-100">
-                            🗑️ Eliminar
-                        </button>
-                    </td>
-                `;
-                tabelaArquivoCorpo.appendChild(tr);
-            });
-        }
-
-        function eliminarDoArquivo(id, botao) {
-            if (!confirm("Queres mesmo eliminar permanentemente este artigo da tua folha de cálculo?")) return;
-            
-            const textoOriginal = botao.innerHTML;
-            botao.disabled = true;
-            botao.innerHTML = "A apagar...";
-            
-            fetch(`${APPS_SCRIPT_URL}?acao=eliminar&id=${id}`, {
-                method: 'POST'
-            })
-            .then(response => response.json())
-            .then(resultado => {
-                if (resultado.status === "sucesso") {
-                    alert("Artigo excluído com sucesso!");
+                btnArquivo.addEventListener('click', () => {
+                    alternarAbas(btnArquivo, btnDescobrir, seccaoArquivo, seccaoDescobrir);
                     carregarArquivoDoSheets();
-                } else {
-                    alert("Erro: " + resultado.mensagem);
-                    botao.disabled = false;
-                    botao.innerHTML = textoOriginal;
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                alert("Erro ao comunicar com a Google.");
-                botao.disabled = false;
-                botao.innerHTML = textoOriginal;
-            });
-        }
+                });
 
-        // --- MÓDULO 3: ENVIAR NEWSLETTER ---
-        btnDispararNewsletter.addEventListener('click', () => {
-            if(!confirm("Queres processar e disparar a newsletter por email com os artigos marcados como pendentes?")) return;
-            
-            btnDispararNewsletter.disabled = true;
-            btnDispararNewsletter.innerText = "A disparar emails...";
-            
-            fetch(`${APPS_SCRIPT_URL}?acao=enviar`)
-            .then(() => {
-                alert("Newsletter enviada com sucesso! Confirma a tua caixa de correio.");
-                carregarArquivoDoSheets();
-            })
-            .catch(err => console.error(err))
-            .finally(() => {
-                btnDispararNewsletter.disabled = false;
-                btnDispararNewsletter.innerText = "🚀 Enviar Newsletter por Email";
-            });
-        });
-
-        // --- LOGICA DOS FILTROS ---
-        document.querySelectorAll('.filter-tag').forEach(tag => {
-            tag.addEventListener('click', (e) => {
-                document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('bg-sky-50', 'text-sky-700', 'border', 'border-sky-200'));
-                document.querySelectorAll('.filter-tag').forEach(t => t.classList.add('bg-slate-100', 'text-slate-600'));
-                
-                e.target.classList.remove('bg-slate-100', 'text-slate-600');
-                e.target.classList.add('bg-sky-50', 'text-sky-700', 'border', 'border-sky-200');
-                
-                const valorTag = e.target.innerText.toLowerCase();
-                categoriaAtual = valorTag;
-                
-                if(valorTag === "geral") {
-                    inputPesquisa.value = "";
-                } else {
-                    inputPesquisa.value = e.target.innerText;
+                function alternarAbas(btnAtivo, btnInativo, seccaoAtiva, seccaoInativa) {
+                    btnAtivo.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
+                    btnAtivo.classList.remove('text-slate-600');
+                    btnInativo.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
+                    btnInativo.classList.add('text-slate-600');
+                    seccaoAtiva.classList.remove('hidden');
+                    seccaoInativa.classList.add('hidden');
                 }
-                
-                // 1. Mostra imediatamente o que está em memória para este filtro
-                carregarFeedDaMemoriaLocal();
-                // 2. Dispara a busca em background para atualizar
-                executarSincronizacaoEmParalelo(false);
-                ativarTemporizadorCincoMinutos();
-            });
-        });
-    </script>
-</body>
+
+                // Clique no botão manual de busca
+                btnBuscarNoticias.addEventListener('click', () => {
+                    categoriaAtual = inputPesquisa.value ? inputPesquisa.value.trim().toLowerCase() : "geral";
+                    executarSincronizacaoEmParalelo(false);
+                    ativarTemporizadorCincoMinutos(); // Reinicia o relógio dos 5 min
+                });
+
+                // --- MOTOR DE SINCRONIZAÇÃO PARALELO E INCREMENTAL ---
+                function executarSincronizacaoEmParalelo(ehSilencioso = false) {
+                    const termo = inputPesquisa.value ? inputPesquisa.value.trim().toLowerCase() : "";
+                    
+                    // Se não for silencioso (ex: clique manual), mostra o aviso de carregamento
+                    if (!ehSilencioso) {
+                        gridNoticias.innerHTML = `
+                            <div id="status-carregamento" class="text-center col-span-full py-6 text-slate-500 font-medium animate-pulse">
+                                🔄 A sintonizar as 11 redações de imprensa em tempo real...
+                            </div>
+                        `;
+                    }
+
+                    let fontesRespondidas = 0;
+                    let novasNoticiasColetadas = [];
+
+                    for (let i = 0; i < TOTAL_FONTES; i++) {
+                        const urlIndividual = `${APPS_SCRIPT_URL}?acao=noticias&fonteIndex=${i}&termo=${encodeURIComponent(termo)}&_=${new Date().getTime()}`;
+
+                        fetch(urlIndividual)
+                        .then(response => response.json())
+                        .then(artigosDaFonte => {
+                            fontesRespondidas++;
+                            
+                            if (artigosDaFonte && artigosDaFonte.length > 0) {
+                                // Juntamos todas as respostas neste lote atual
+                                novasNoticiasColetadas = novasNoticiasColetadas.concat(artigosDaFonte);
+                                
+                                // Ordenamos imediatamente por data (mais recente primeiro)
+                                novasNoticiasColetadas.sort((a, b) => b.dataPublicacao - a.dataPublicacao);
+
+                                // Limpamos o aviso de carregamento no primeiro sinal de dados
+                                const statusDiv = document.getElementById('status-carregamento');
+                                if (statusDiv && !ehSilencioso) statusDiv.remove();
+
+                                // Desenha as notícias progressivamente no ecrã
+                                atualizarEcraEfetivo(novasNoticiasColetadas);
+                                
+                                // Guardamos na memória local do browser associada a este tema/categoria
+                                localStorage.setItem(`cache_news_${categoriaAtual}`, JSON.stringify(novasNoticiasColetadas));
+                            }
+
+                            if (fontesRespondidas === TOTAL_FONTES && novasNoticiasColetadas.length === 0 && !ehSilencioso) {
+                                gridNoticias.innerHTML = `<div class="text-center col-span-full py-12 text-slate-400">Nenhuma notícia encontrada de momento. Tenta outro termo.</div>`;
+                            }
+                        })
+                        .catch(err => {
+                            fontesRespondidas++;
+                            if (fontesRespondidas === TOTAL_FONTES && novasNoticiasColetadas.length === 0 && !ehSilencioso) {
+                                gridNoticias.innerHTML = `<div class="text-center col-span-full py-12 text-red-500">Erro de ligação ao servidor. A mostrar dados offline.</div>`;
+                                carregarFeedDaMemoriaLocal();
+                            }
+                        });
+                    }
+                }
+
+                // Limpa e redesenha a grelha de notícias com uma estrutura editorial e gravação corrigida
+                function atualizarEcraEfetivo(artigos) {
+                    gridNoticias.innerHTML = "";
+                    
+                    // 0. Filtrar duplicados e unificar dados limpos
+                    const artigosLimpos = articlesUnicos(artigos).map((artigo, idx) => {
+                        let tit = artigo.title ? artigo.title.replace(/<!\[CDATA\[/gi, "").replace(/\]\]>/g, "").trim() : "";
+                        let desc = artigo.description ? artigo.description.replace(/<!\[CDATA\[/gi, "").replace(/\]\]>/g, "").trim() : "";
+                        
+                        let img = artigo.image || "";
+                        if (img.includes("cmjornal.pt")) {
+                            img = img.replace(/img_\d+x\d+uu/gi, "img_432x244").replace(/img_\d+x\d+/gi, "img_432x244");
+                        }
+                        
+                        return {
+                            ...artigo,
+                            titleClean: tit,
+                            descClean: desc,
+                            imageClean: img,
+                            indexOriginal: idx // Mantém o índice rastreável para a função de gravação
+                        };
+                    });
+
+                    // --- CORREÇÃO CRÍTICA: Guardar no array global para que a gravação funcione sempre ---
+                    listaArtigosGlobal = artigosLimpos;
+
+                    if (artigosLimpos.length === 0) {
+                        gridNoticias.innerHTML = `<div class="text-center col-span-full py-12 text-slate-400">Nenhuma notícia encontrada de momento.</div>`;
+                        return;
+                    }
+
+                    // Se estivermos a filtrar por uma categoria específica, usamos o layout de grelha normal
+                    if (categoriaAtual !== "geral") {
+                        gridNoticias.className = "grid grid-cols-1 md:grid-cols-3 gap-6";
+                        artigosLimpos.slice(0, 60).forEach(artigo => {
+                            gridNoticias.appendChild(criarCardNormal(artigo));
+                        });
+                        return;
+                    }
+
+                    // --- REGRAS EDITORIAIS PARA A HOMEPAGE (GERAL) ---
+                    gridNoticias.className = "space-y-10";
+
+                    // 1. ELEIÇÃO DO GRANDE DESTAQUE (ÚLTIMA HORA)
+                    let indexGrandeDestaque = artigosLimpos.findIndex(a => 
+                        a.imageClean && (a.titleClean.toLowerCase().includes("última hora") || a.titleClean.toLowerCase().includes("urgente") || a.descClean.toLowerCase().includes("última hora"))
+                    );
+                    
+                    if (indexGrandeDestaque === -1) {
+                        indexGrandeDestaque = artigosLimpos.findIndex(a => a.imageClean);
+                    }
+                    if (indexGrandeDestaque === -1) indexGrandeDestaque = 0;
+
+                    const grandeDestaque = artigosLimpos[indexGrandeDestaque];
+
+                    // 2. EXTRAÇÃO DOS 2 MINI-DESTAQUES POR CATEGORIA
+                    const miniDestaques = [];
+                    const contadoresPorCategoria = {};
+                    const IDsExcluidos = [grandeDestaque.url];
+
+                    artigosLimpos.forEach(artigo => {
+                        if (artigo.url === grandeDestaque.url) return;
+                        
+                        const cat = (artigo.categoria || "GERAL").toUpperCase();
+                        if (cat !== "GERAL") {
+                            contadoresPorCategoria[cat] = contadoresPorCategoria[cat] || 0;
+                            if (contadoresPorCategoria[cat] < 2) {
+                                miniDestaques.push(artigo);
+                                IDsExcluidos.push(artigo.url);
+                                contadoresPorCategoria[cat]++;
+                            }
+                        }
+                    });
+
+                    // 3. RESTO DAS NOTÍCIAS (FEED DE CONTINUIDADE)
+                    const restoDasNoticias = artigosLimpos.filter(a => !IDsExcluidos.includes(a.url)).slice(0, 50);
+
+                    // --- CONSTRUÇÃO VISUAL DO LAYOUT ---
+
+                    // Bloco I: Grande Destaque XL
+                    const seccaoGrandeDestaque = document.createElement('div');
+                    seccaoGrandeDestaque.className = "bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all";
+                    
+                    const flagUltimaHora = grandeDestaque.titleClean.toLowerCase().includes("última hora") || grandeDestaque.descClean.toLowerCase().includes("última hora")
+                        ? `<span class="bg-red-600 text-white text-[11px] font-extrabold px-2.5 py-1 rounded-md uppercase tracking-wider animate-pulse">🔥 Última Hora</span>`
+                        : `<span class="bg-sky-100 text-sky-800 text-[11px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">⭐ Destaque Principal</span>`;
+
+                    seccaoGrandeDestaque.innerHTML = `
+                        <div class="flex flex-col md:flex-row gap-6">
+                            ${grandeDestaque.imageClean ? `
+                                <div class="w-full md:w-3/5 h-64 md:h-96 overflow-hidden rounded-xl shadow-inner">
+                                    <img src="${grandeDestaque.imageClean}" class="w-full h-full object-cover hover:scale-102 transition-transform duration-500" onerror="this.parentElement.remove()">
+                                </div>
+                            ` : ''}
+                            <div class="flex-1 flex flex-col justify-between py-2 space-y-4">
+                                <div class="space-y-3">
+                                    <div class="flex items-center gap-2">
+                                        ${flagUltimaHora}
+                                        <span class="text-xs font-semibold text-slate-400 uppercase tracking-widest">${grandeDestaque.categoria}</span>
+                                    </div>
+                                    <h2 class="text-2xl md:text-4xl font-extrabold text-slate-900 leading-tight hover:text-sky-600 transition-colors">
+                                        <a href="${grandeDestaque.url}" target="_blank">${grandeDestaque.titleClean}</a>
+                                    </h2>
+                                    <p class="text-slate-600 text-base md:text-lg leading-relaxed">${grandeDestaque.descClean}</p>
+                                </div>
+                                <div class="space-y-4 pt-4 border-t border-slate-100">
+                                    <p class="text-xs text-slate-400 font-medium">Fonte editorial: <strong class="text-slate-600">${grandeDestaque.source.name}</strong></p>
+                                    <div class="flex gap-2 max-w-xl">
+                                        <input type="text" id="nota-${grandeDestaque.indexOriginal}" placeholder="Adicionar nota pessoal para este destaque..." 
+                                            class="flex-1 px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500">
+                                        <button onclick="gravarNoSheetsDirectoComIndice('${grandeDestaque.indexOriginal}', '${grandeDestaque.source.name}', '${grandeDestaque.url}', '${grandeDestaque.categoria}')" 
+                                                id="btn-gravar-${grandeDestaque.indexOriginal}"
+                                                class="bg-slate-900 hover:bg-sky-600 text-white text-xs font-medium px-4 py-2 rounded-lg transition-colors whitespace-nowrap">
+                                            📥 Gravar Artigo
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    gridNoticias.appendChild(seccaoGrandeDestaque);
+
+                    // Bloco II: Mini-Destaques por Categoria (Grelha de 2 Colunas)
+                    if (miniDestaques.length > 0) {
+                        const divFundoCategorias = document.createElement('div');
+                        divFundoCategorias.innerHTML = `
+                            <h3 class="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+                                <span>⚡</span> Em Destaque nas Categorias
+                            </h3>
+                            <div id="grid-mini-destaques" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                        `;
+                        gridNoticias.appendChild(divFundoCategorias);
+                        
+                        const gridMini = document.getElementById('grid-mini-destaques');
+                        miniDestaques.forEach(artigo => {
+                            const miniCard = document.createElement('div');
+                            miniCard.className = "bg-white border border-slate-200 rounded-xl p-4 flex gap-4 items-start hover:shadow-sm transition-all";
+                            miniCard.innerHTML = `
+                                ${artigo.imageClean ? `
+                                    <div class="w-24 h-24 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                                        <img src="${artigo.imageClean}" class="w-full h-full object-cover" onerror="this.remove()">
+                                    </div>
+                                ` : ''}
+                                <div class="flex-1 flex flex-col justify-between space-y-3">
+                                    <div>
+                                        <span class="text-[9px] font-extrabold bg-sky-50 text-sky-700 px-1.5 py-0.5 rounded uppercase tracking-wider">${artigo.categoria}</span>
+                                        <h4 class="font-bold text-sm text-slate-900 leading-snug mt-1 hover:text-sky-600 transition-colors">
+                                            <a href="${artigo.url}" target="_blank">${artigo.titleClean}</a>
+                                        </h4>
+                                        <p class="text-[11px] text-slate-400 font-medium mt-0.5">Fonte: <em>${artigo.source.name}</em></p>
+                                    </div>
+                                    
+                                    <div class="space-y-1.5 pt-1.5 border-t border-slate-100">
+                                        <input type="text" id="nota-${artigo.indexOriginal}" placeholder="Adicionar nota pessoal..." 
+                                            class="w-full px-2 py-1 rounded border border-slate-200 text-[11px] focus:outline-none focus:ring-1 focus:ring-sky-500">
+                                        <button onclick="gravarNoSheetsDirectoComIndice('${artigo.indexOriginal}', '${artigo.source.name}', '${artigo.url}', '${artigo.categoria}')"
+                                                id="btn-gravar-${artigo.indexOriginal}" 
+                                                class="w-full bg-slate-100 hover:bg-sky-600 hover:text-white text-slate-700 text-[11px] font-medium py-1 rounded transition-colors flex items-center justify-center gap-1">
+                                            📥 Gravar para a Newsletter
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                            gridMini.appendChild(miniCard);
+                        });
+                    }
+
+                    // Bloco III: Feed de Continuidade (Grelha de 3 Colunas)
+                    const divFundoResto = document.createElement('div');
+                    divFundoResto.innerHTML = `
+                        <h3 class="text-sm font-bold uppercase tracking-widest text-slate-400 mb-4">
+                            📰 Mais Atualidade Diária
+                        </h3>
+                        <div id="grid-resto-noticias" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+                    `;
+                    gridNoticias.appendChild(divFundoResto);
+
+                    const gridResto = document.getElementById('grid-resto-noticias');
+                    restoDasNoticias.forEach(artigo => {
+                        gridResto.appendChild(criarCardNormal(artigo));
+                    });
+                }
+
+                // Função de apoio para montar os cartões normais
+                function criarCardNormal(artigo) {
+                    const card = document.createElement('div');
+                    card.className = "card-noticia bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between p-5 space-y-4 transition-all duration-300 hover:shadow-md";
+                    
+                    const imagemHTML = artigo.imageClean 
+                        ? `<div class="w-full h-40 overflow-hidden rounded-lg mb-2">
+                            <img src="${artigo.imageClean}" alt="Notícia" class="w-full h-full object-cover hover:scale-105 transition-transform duration-300" onerror="this.parentElement.remove()">
+                        </div>` 
+                        : '';
+
+                    const etiquetaHTML = (artigo.categoria || "GERAL").toUpperCase() === "GERAL" 
+                        ? "" 
+                        : `<span class="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">${artigo.categoria}</span>`;
+
+                    card.innerHTML = `
+                        <div class="space-y-2">
+                            ${imagemHTML}
+                            <div class="pt-1 flex justify-between items-center">
+                                ${etiquetaHTML}
+                            </div>
+                            <h3 class="font-bold text-base text-slate-900 leading-snug hover:text-sky-600 transition-colors">
+                                <a href="${artigo.url}" target="_blank">${artigo.titleClean}</a>
+                            </h3>
+                            <p class="text-xs text-slate-500">${artigo.descClean}</p>
+                            <p class="text-[11px] text-slate-400 font-medium">Fonte: <em>${artigo.source.name}</em></p>
+                        </div>
+                        <div class="space-y-2 pt-2 border-t border-slate-100">
+                            <input type="text" id="nota-${artigo.indexOriginal}" placeholder="Adicionar nota pessoal para a newsletter (opcional)..." 
+                                class="w-full px-3 py-1.5 rounded border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500">
+                            <button onclick="gravarNoSheetsDirectoComIndice('${artigo.indexOriginal}', '${artigo.source.name}', '${artigo.url}', '${artigo.categoria}')" 
+                                    id="btn-gravar-${artigo.indexOriginal}"
+                                    class="w-full bg-slate-900 hover:bg-sky-600 text-white text-xs font-medium py-2 rounded transition-colors flex items-center justify-center gap-1">
+                                📥 Gravar para a Newsletter
+                            </button>
+                        </div>
+                    `;
+                    return card;
+                }
+
+                // Função auxiliar para remover notícias duplicadas
+                function articlesUnicos(artigos) {
+                    const vistos = new Set();
+                    return artigos.filter(artigo => {
+                        const duplicado = vistos.has(artigo.url);
+                        vistos.add(artigo.url);
+                        return !duplicado;
+                    });
+                }
+
+                // Carrega os dados da memória instantaneamente (Evita ecrãs brancos)
+                function carregarFeedDaMemoriaLocal() {
+                    const dadosGuardados = localStorage.getItem(`cache_news_${categoriaAtual}`);
+                    if (dadosGuardados) {
+                        const artigosGrave = JSON.parse(dadosGuardados);
+                        if (artigosGrave.length > 0) {
+                            atualizarEcraEfetivo(artigosGrave);
+                        }
+                    }
+                }
+
+                // --- PRECIZÃO TOTAL: Função reajustada para encontrar o artigo em listaArtigosGlobal ---
+                // --- PRECISÃO TOTAL: Envio universal corrigido via Fetch para servidores externos ---
+                function gravarNoSheetsDirectoComIndice(index, fonteNome, urlArtigo, categoria) {
+                    const inputNota = document.getElementById(`nota-${index}`);
+                    const notaTexto = inputNota ? inputNota.value.trim() : "";
+                    
+                    // Procura segura baseada no URL único da notícia
+                    const artigoParaGravar = listaArtigosGlobal.find(a => a.url === urlArtigo);
+                    
+                    if (!artigoParaGravar) {
+                        alert("Erro: Não foi possível localizar os dados desta notícia para gravação.");
+                        return;
+                    }
+
+                    const btn = document.getElementById(`btn-gravar-${index}`);
+                    const textoOriginal = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = "⏳ A gravar...";
+
+                    // Estruturar os dados no formato exato que o teu Apps Script (doPost) espera receber
+                    const dadosArtigo = {
+                        titulo: artigoParaGravar.titleClean,
+                        fonte: fonteNome,
+                        url: urlArtigo,
+                        categoria: categoria,
+                        notaPessoal: notaTexto
+                    };
+
+                    const formBody = new URLSearchParams();
+                    formBody.append('dados', JSON.stringify(dadosArtigo));
+
+                    // Envia o pedido POST real para a tua Web App da Google
+                    fetch(APPS_SCRIPT_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+                        body: formBody.toString()
+                    })
+                    .then(response => response.json())
+                    .then(resultado => {
+                        if (resultado.status === "sucesso") {
+                            btn.innerHTML = "✅ Gravado com Sucesso!";
+                            btn.classList.remove("bg-slate-900", "hover:bg-sky-600");
+                            btn.classList.add("bg-emerald-600");
+                            if (inputNota) inputNota.disabled = true;
+                        } else {
+                            alert("Erro no servidor: " + (resultado.erro || "Falha ao gravar."));
+                            btn.disabled = false;
+                            btn.innerHTML = textoOriginal;
+                        }
+                    })
+                    .catch(erro => {
+                        console.error(erro);
+                        alert("Erro de ligação à Google.");
+                        btn.disabled = false;
+                        btn.innerHTML = textoOriginal;
+                    });
+                }
+
+                // --- MÓDULO 2: CARREGAR BASE DE DADOS (TABELA COM REMOÇÃO) ---
+                function carregarArquivoDoSheets() {
+                    tabelaArquivoCorpo.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">A leer as linhas do teu Google Sheets...</td></tr>`;
+                    
+                    fetch(APPS_SCRIPT_URL)
+                    .then(response => response.json())
+                    .then(artigos => {
+                        if (artigos && artigos.length > 0) {
+                            renderizarLinhasDaTabela(artigos);
+                        } else {
+                            tabelaArquivoCorpo.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Ainda não tens nenhum artigo guardado na folha.</td></tr>`;
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        tabelaArquivoCorpo.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Erro ao carregar o arquivo do Sheets.</td></tr>`;
+                    });
+                }
+
+                function renderizarLinhasDaTabela(artigos) {
+                    tabelaArquivoCorpo.innerHTML = "";
+                    
+                    artigos.forEach(artigo => {
+                        const tr = document.createElement('tr');
+                        tr.className = "hover:bg-slate-50/80 transition-colors";
+                        
+                        const statusNewsletter = (artigo.Enviado_Newsletter === true || artigo.Enviado_Newsletter === "TRUE")
+                            ? `<span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Enviado</span>`
+                            : `<span class="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Pendente</span>`;
+
+                        tr.innerHTML = `
+                            <td class="p-4 max-w-sm">
+                                <div class="font-semibold text-slate-900 leading-tight">
+                                    <a href="${artigo.URL}" target="_blank" class="hover:text-sky-600 transition-colors">${artigo.Titulo}</a>
+                                </div>
+                                <div class="text-[11px] text-slate-400 mt-1">Fonte: ${artigo.Fonte}</div>
+                            </td>
+                            <td class="p-4">
+                                <span class="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-1 rounded uppercase">${artigo.Categoria}</span>
+                            </td>
+                            <td class="p-4 text-xs font-serif text-slate-600 italic">
+                                ${artigo.Nota_Pessoal ? artigo.Nota_Pessoal : '<span class="text-slate-300 font-sans">Sem notas</span>'}
+                            </td>
+                            <td class="p-4">${statusNewsletter}</td>
+                            <td class="p-4 text-center">
+                                <button onclick="eliminarDoArquivo('${artigo.ID}', this)" 
+                                        class="bg-red-50 text-red-600 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded-md text-xs font-medium transition-all shadow-sm border border-red-100">
+                                    🗑️ Eliminar
+                                </button>
+                            </td>
+                        `;
+                        tabelaArquivoCorpo.appendChild(tr);
+                    });
+                }
+
+                function eliminarDoArquivo(id, botao) {
+                    if (!confirm("Queres mesmo eliminar permanentemente este artigo da tua folha de cálculo?")) return;
+                    
+                    const textoOriginal = botao.innerHTML;
+                    botao.disabled = true;
+                    botao.innerHTML = "A apagar...";
+                    
+                    fetch(`${APPS_SCRIPT_URL}?acao=eliminar&id=${id}`, {
+                        method: 'POST'
+                    })
+                    .then(response => response.json())
+                    .then(resultado => {
+                        if (resultado.status === "sucesso") {
+                            alert("Artigo excluído com sucesso!");
+                            carregarArquivoDoSheets();
+                        } else {
+                            alert("Erro: " + resultado.mensagem);
+                            botao.disabled = false;
+                            botao.innerHTML = textoOriginal;
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert("Erro ao comunicar com a Google.");
+                        botao.disabled = false;
+                        botao.innerHTML = textoOriginal;
+                    });
+                }
+
+                // --- MÓDULO 3: ENVIAR NEWSLETTER ---
+                btnDispararNewsletter.addEventListener('click', () => {
+                    if(!confirm("Queres processar e disparar a newsletter por email com os artigos marcados como pendentes?")) return;
+                    
+                    btnDispararNewsletter.disabled = true;
+                    btnDispararNewsletter.innerText = "A disparar emails...";
+                    
+                    fetch(`${APPS_SCRIPT_URL}?acao=enviar`)
+                    .then(() => {
+                        alert("Newsletter enviada com sucesso! Confirma a tua caixa de correio.");
+                        carregarArquivoDoSheets();
+                    })
+                    .catch(err => console.error(err))
+                    .finally(() => {
+                        btnDispararNewsletter.disabled = false;
+                        btnDispararNewsletter.innerText = "🚀 Enviar Newsletter por Email";
+                    });
+                });
+
+                // --- LOGICA DOS FILTROS ---
+                document.querySelectorAll('.filter-tag').forEach(tag => {
+                    tag.addEventListener('click', (e) => {
+                        document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('bg-sky-50', 'text-sky-700', 'border', 'border-sky-200'));
+                        document.querySelectorAll('.filter-tag').forEach(t => t.classList.add('bg-slate-100', 'text-slate-600'));
+                        
+                        e.target.classList.remove('bg-slate-100', 'text-slate-600');
+                        e.target.classList.add('bg-sky-50', 'text-sky-700', 'border', 'border-sky-200');
+                        
+                        const valorTag = e.target.innerText.toLowerCase();
+                        categoriaAtual = valorTag;
+                        
+                        if(valorTag === "geral") {
+                            inputPesquisa.value = "";
+                        } else {
+                            inputPesquisa.value = e.target.innerText;
+                        }
+                        
+                        // 1. Mostra imediatamente o que está em memória para este filtro
+                        carregarFeedDaMemoriaLocal();
+                        // 2. Dispara a busca em background para atualizar
+                        executarSincronizacaoEmParalelo(false);
+                        ativarTemporizadorCincoMinutos();
+                    });
+                });
+        </script>
+    </body>
 </html>
