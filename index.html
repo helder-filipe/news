@@ -89,6 +89,9 @@
     const serverSearchTerm = term => { const key=String(term||'').trim().toLocaleLowerCase('pt-PT'); return key==='política'?'politica':key==='saúde'?'saude':term; };
     const els = Object.fromEntries(['tab-descobrir','tab-arquivo','view-descobrir','view-arquivo','search-input','search-button','refresh-button','feed-status','feed-title','feed-stamp','result-summary','news-feed','sort-select','pending-count','archive-body','archive-summary','archive-search','archive-filter','archive-refresh','archive-status','send-newsletter','newsletter-copy'].map(id => [id.replaceAll('-','_'), document.getElementById(id)]));
     let activeTerm = '';
+    let activeCategory = '';
+    let allArticles = [];
+    let baseFeedLoaded = false;
     let currentArticles = [];
     let archiveArticles = [];
     let feedGeneration = 0;
@@ -101,7 +104,7 @@
     const sourceName = article => clean(article?.source?.name || article?.source || article?.fonte || 'Fonte desconhecida');
     const getDate = article => { const raw = article?.dataPublicacao || article?.publishedAt || article?.pubDate || article?.date || ''; const date = new Date(raw); return Number.isNaN(date.getTime()) ? null : date; };
     const safeUrl = value => { try { const url = new URL(String(value || '')); return ['http:','https:'].includes(url.protocol) ? url.href : ''; } catch { return ''; } };
-    const normaliseArticle = (raw, index) => ({...raw, title:clean(raw?.title || raw?.Titulo || 'Artigo sem título'), description:clean(raw?.description || raw?.descricao || ''), url:safeUrl(raw?.url || raw?.URL), image:safeUrl(raw?.image || raw?.imagem), category:displayCategory(clean(raw?.categoria || raw?.category || raw?.Categoria || 'Geral')), source:sourceName(raw), date:getDate(raw), _key:`${safeUrl(raw?.url || raw?.URL)}|${index}`});
+    const normaliseArticle = (raw, index) => { const category=displayCategory(clean(raw?.categoria || raw?.category || raw?.Categoria || 'Geral')); const language=clean(raw?.idioma || raw?.language || '').toLowerCase(); const knownPortuguese=['pt','pt-pt','pt-br','por','portuguese','português']; return {...raw,title:clean(raw?.title || raw?.Titulo || 'Artigo sem título'),description:clean(raw?.description || raw?.descricao || ''),url:safeUrl(raw?.url || raw?.URL),image:safeUrl(raw?.image || raw?.imagem),category,source:sourceName(raw),date:getDate(raw),language,isNonPortuguese:Boolean(raw?.naoPortugues || raw?.isNonPortuguese || (language && !knownPortuguese.includes(language)) || canonicalCategory(category)==='internacional'),_key:`${safeUrl(raw?.url || raw?.URL)}|${index}`}; };
     const cacheKey = term => CACHE_PREFIX + (term.trim().toLocaleLowerCase('pt-PT') || 'tudo');
     const setStatus = (el, message='', type='') => { el.textContent = message; el.className = `status${type ? ' '+type : ''}`; };
     const showBusy = (el, message) => { el.className='status'; el.replaceChildren(); const spin=document.createElement('span'); spin.className='spinner'; spin.setAttribute('aria-hidden','true'); el.append(spin,document.createTextNode(message)); };
@@ -120,37 +123,36 @@
     els.tab_descobrir.addEventListener('click',()=>activateView('discover'));
     els.tab_arquivo.addEventListener('click',()=>activateView('archive'));
 
-    function setActiveChip(term) { document.querySelectorAll('.chip').forEach(chip => chip.setAttribute('aria-pressed',String((chip.dataset.term||'').toLocaleLowerCase('pt-PT')===term.toLocaleLowerCase('pt-PT')))); }
+    function setActiveChip() { const selected=activeCategory || activeTerm; document.querySelectorAll('.chip').forEach(chip => chip.setAttribute('aria-pressed',String(canonicalCategory(chip.dataset.term||'')===canonicalCategory(selected)))); }
+    function filterForActiveCategory(articles) { if(!activeCategory)return [...articles]; const target=canonicalCategory(activeCategory); if(target==='internacional')return articles.filter(article=>article.isNonPortuguese || canonicalCategory(article.category)==='internacional' || /\bonu\b/i.test(article.source)); return articles.filter(article=>canonicalCategory(article.category)===target); }
+    function applyCurrentFilter() { currentArticles=filterForActiveCategory(allArticles); currentArticles.sort((a,b)=>(b.date?.getTime()||0)-(a.date?.getTime()||0)); displayedCount=PAGE_SIZE; renderFeed(); }
     function readCache(term) { try { const stored=JSON.parse(localStorage.getItem(cacheKey(term))||'null'); return Array.isArray(stored)?stored.map(normaliseArticle):[]; } catch { return []; } }
     function writeCache(term, articles) { try { localStorage.setItem(cacheKey(term),JSON.stringify(articles.slice(0,150))); } catch { setStatus(els.feed_status,'O armazenamento local está cheio. As notícias continuam disponíveis nesta sessão.','error'); } }
 
     async function fetchSource(index, term, signal) {
       const url=new URL(APPS_SCRIPT_URL); url.searchParams.set('acao','noticias'); url.searchParams.set('fonteIndex',String(index)); url.searchParams.set('termo',serverSearchTerm(term)); url.searchParams.set('_',String(Date.now()));
-      const response=await fetch(url,{signal,cache:'no-store'}); if(!response.ok) throw new Error(`Fonte ${index+1}: HTTP ${response.status}`);
-      const data=await response.json(); if(!Array.isArray(data)){if(data?.erro)throw new Error(data.erro);throw new Error('A fonte devolveu uma resposta inválida.');} return data;
+      const controller=new AbortController(); const timeout=setTimeout(()=>controller.abort(),6500); const relayAbort=()=>controller.abort(); signal.addEventListener('abort',relayAbort,{once:true});
+      try{const response=await fetch(url,{signal:controller.signal,cache:'no-store'});if(!response.ok)throw new Error(`Fonte ${index+1}: HTTP ${response.status}`);const data=await response.json();if(!Array.isArray(data)){if(data?.erro)throw new Error(data.erro);throw new Error('A fonte devolveu uma resposta inválida.');}return data;}
+      finally{clearTimeout(timeout);signal.removeEventListener('abort',relayAbort);}
     }
     async function syncFeed({silent=false}={}) {
-      const term=activeTerm.trim(); const previousArticles=currentArticles.slice(); const generation=++feedGeneration;
-      if(feedAbort) feedAbort.abort(); feedAbort=new AbortController();
-      if(!silent){showBusy(els.feed_status,'A consultar as fontes de notícias…'); if(!currentArticles.length) renderEmpty('A recolher as notícias mais recentes.');}
-      els.search_button.disabled=true; els.refresh_button.disabled=true;
+      const term=activeTerm.trim(); const previousArticles=allArticles.slice(); const generation=++feedGeneration;
+      if(feedAbort)feedAbort.abort(); feedAbort=new AbortController();
+      if(!silent){showBusy(els.feed_status,'A consultar as fontes de notícias…');if(!currentArticles.length)renderEmpty('A recolher as notícias mais recentes.');}
+      els.search_button.disabled=true;els.refresh_button.disabled=true;
       const responses=await Promise.allSettled(Array.from({length:TOTAL_FONTES},(_,i)=>fetchSource(i,term,feedAbort.signal)));
-      if(generation!==feedGeneration) return;
-      const succeeded=responses.filter(r=>r.status==='fulfilled');
-      const all=succeeded.flatMap(r=>r.value).filter(a=>a && (a.title || a.Titulo) && (a.url || a.URL));
-      const seen=new Set();
-      currentArticles=all.map(normaliseArticle).filter(article=>{const key=article.url||article.title.toLocaleLowerCase('pt-PT');if(seen.has(key))return false;seen.add(key);return true;});
-      const keepCached=succeeded.length<TOTAL_FONTES && !all.length && previousArticles.length>0;
-      if((!succeeded.length || keepCached) && previousArticles.length) currentArticles=previousArticles;
-      currentArticles.sort((a,b)=>(b.date?.getTime()||0)-(a.date?.getTime()||0));
-      if(succeeded.length && !keepCached) writeCache(term,all);
+      if(generation!==feedGeneration)return;
+      const succeeded=responses.filter(r=>r.status==='fulfilled');const all=succeeded.flatMap(r=>r.value).filter(a=>a&&(a.title||a.Titulo)&&(a.url||a.URL));const keepCached=succeeded.length<TOTAL_FONTES&&!all.length&&previousArticles.length>0;
+      if((!succeeded.length||keepCached)&&previousArticles.length)allArticles=previousArticles;
+      else {const seen=new Set();allArticles=all.map(normaliseArticle).filter(article=>{const key=article.url||article.title.toLocaleLowerCase('pt-PT');if(seen.has(key))return false;seen.add(key);return true;});}
+      if(!term&&succeeded.length)baseFeedLoaded=true;
+      if(succeeded.length&&!keepCached)writeCache(term,all);
       els.feed_stamp.textContent=`Atualizado às ${new Date().toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'})}`;
-      els.feed_title.textContent=term ? `Resultados para “${term}”` : 'A edição de hoje';
-      displayedCount=PAGE_SIZE; renderFeed();
-      if(!succeeded.length){setStatus(els.feed_status,currentArticles.length?'Não foi possível atualizar. A mostrar os últimos resultados guardados.':'Sem ligação às fontes. Verifique a ligação e tente novamente.','error');}
-      else if(succeeded.length<TOTAL_FONTES){setStatus(els.feed_status,`${succeeded.length} de ${TOTAL_FONTES} fontes responderam. A seleção foi atualizada com os resultados disponíveis.`,'');}
+      applyCurrentFilter();
+      if(!succeeded.length)setStatus(els.feed_status,currentArticles.length?'Não foi possível actualizar. A mostrar os últimos resultados guardados.':'Sem resposta das fontes. Tente novamente; a pesquisa termina ao fim de 6,5 segundos.','error');
+      else if(succeeded.length<TOTAL_FONTES)setStatus(els.feed_status,`${succeeded.length} de ${TOTAL_FONTES} fontes responderam. A seleção foi actualizada com os resultados disponíveis.`,'');
       else setStatus(els.feed_status,'');
-      els.search_button.disabled=false; els.refresh_button.disabled=false;
+      els.search_button.disabled=false;els.refresh_button.disabled=false;
     }
     function renderEmpty(message, detail='') { const box=element('div','empty');box.append(element('strong','',message));if(detail)box.append(element('span','',detail));els.news_feed.replaceChildren(box); }
     function sortedArticles() { const items=[...currentArticles]; if(els.sort_select.value==='source') items.sort((a,b)=>a.source.localeCompare(b.source,'pt-PT')); return items; }
@@ -169,15 +171,16 @@
       const body=element('div','card-body');body.append(categoryBadge(article.category));const title=makeLink(article.url,article.title,'article-title');title.classList.add('article-title');body.append(title);if(article.description)body.append(element('p','description',article.description));addMeta(body,article);card.append(body,saveControls(article,true));return card;
     }
     function renderFeed() {
-      const list=sortedArticles();els.result_summary.textContent=`${list.length} ${list.length===1?'artigo disponível':'artigos disponíveis'}${activeTerm?' nesta pesquisa':' nas fontes consultadas'}.`;
+      const list=sortedArticles();els.feed_title.textContent=activeCategory?`Tema: ${activeCategory}`:activeTerm?`Resultados para “${activeTerm}”`:'A edição de hoje';els.result_summary.textContent=`${list.length} ${list.length===1?'artigo disponível':'artigos disponíveis'}${activeCategory?` no tema ${activeCategory}`:activeTerm?' nesta pesquisa':' nas fontes consultadas'}.`;
       if(!list.length){renderEmpty('Não encontrámos notícias.','Experimente outro tema ou volte a pesquisar mais tarde.');return;}
       const fragment=document.createDocumentFragment();fragment.append(makeFeatured(list[0]));
       if(list.length>1){const label=element('h3','section-label');label.append(element('span','','✦'),document.createTextNode(' Mais notícias'));fragment.append(label);const cards=element('div','cards');list.slice(1,displayedCount).forEach(a=>cards.append(makeCard(a)));fragment.append(cards);
         if(list.length>displayedCount){const more=element('div','load-more-wrap');const button=element('button','btn btn-secondary',`Mostrar mais (${list.length-displayedCount})`);button.type='button';button.addEventListener('click',()=>{displayedCount=Math.min(list.length,displayedCount+PAGE_SIZE);renderFeed();});more.append(button);fragment.append(more);}}
       els.news_feed.replaceChildren(fragment);
     }
-    function renderCached(term) { currentArticles=readCache(term); if(currentArticles.length){els.feed_status.textContent='A mostrar a última seleção guardada enquanto procuramos atualizações.';renderFeed();}else renderEmpty('As notícias estão a caminho.','A primeira atualização pode demorar alguns segundos.'); }
-    async function search(term=els.search_input.value) { activeTerm=clean(term);els.search_input.value=activeTerm;setActiveChip(activeTerm);displayedCount=PAGE_SIZE;renderCached(activeTerm);await syncFeed(); }
+    function renderCached(term) { allArticles=readCache(term);if(!term&&localStorage.getItem(cacheKey(''))!==null)baseFeedLoaded=true;applyCurrentFilter();if(allArticles.length)els.feed_status.textContent='A mostrar a última seleção guardada enquanto procuramos actualizações.';else if(!term)renderEmpty('As notícias estão a caminho.','A primeira actualização pode demorar alguns segundos.'); }
+    async function search(term=els.search_input.value) { activeCategory='';activeTerm=clean(term);els.search_input.value=activeTerm;setActiveChip();displayedCount=PAGE_SIZE;renderCached(activeTerm);await syncFeed(); }
+    function selectCategory(category) { activeTerm='';activeCategory=clean(category);els.search_input.value='';setActiveChip();displayedCount=PAGE_SIZE;if(feedAbort){feedAbort.abort();feedAbort=null;feedGeneration++;els.search_button.disabled=false;els.refresh_button.disabled=false;}const hasCache=localStorage.getItem(cacheKey(''))!==null;allArticles=hasCache?readCache(''):[];baseFeedLoaded=baseFeedLoaded||hasCache;applyCurrentFilter();if(!baseFeedLoaded)syncFeed();else setStatus(els.feed_status,''); }
 
     async function saveArticle(article,note,button) {
       if(!article.url){setStatus(els.feed_status,'Este artigo não tem um endereço válido para guardar.','error');return;}
@@ -218,7 +221,7 @@
 
     els.search_button.addEventListener('click',()=>search());els.refresh_button.addEventListener('click',()=>syncFeed());
     els.search_input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();search();}});
-    document.querySelectorAll('.chip').forEach(chip=>chip.addEventListener('click',()=>{const term=chip.dataset.term||'';els.search_input.value=term;search(term);}));
+    document.querySelectorAll('.chip').forEach(chip=>chip.addEventListener('click',()=>selectCategory(chip.dataset.term||'')));
     els.sort_select.addEventListener('change',renderFeed);
     els.archive_refresh.addEventListener('click',loadArchive);els.archive_search.addEventListener('input',renderArchive);els.archive_filter.addEventListener('change',renderArchive);els.send_newsletter.addEventListener('click',sendNewsletter);
     window.addEventListener('online',()=>{if(!els.view_descobrir.classList.contains('hidden'))syncFeed({silent:true});});
